@@ -18,7 +18,7 @@ jobs:
           node-version: "18" # Или версия, которую используешь (проверь в .nvmrc или package.json)
 
       - name: Install dependencies
-        run: npm ci # Или yarn install, если используешь Yarn
+        run: npm install # Или yarn install, если используешь Yarn
 
       - name: Build
         run: npm run build # Соберёт в dist/
