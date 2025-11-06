@@ -225,7 +225,9 @@ function update(delta: number) {
 // Функция рендеринга
 function render() {
   updatePointsGeometry(); // Обновляем геометрию каждый кадр
+  stats.begin();
   renderer.render(scene, camera);
+  stats.end();
 }
 
 // Обработчик слайдера
@@ -241,10 +243,8 @@ function animate(time: number) {
   const delta = time - lastTime;
   lastTime = time;
 
-  stats.begin();
   update(delta);
   render();
-  stats.end();
 
   requestAnimationFrame(animate);
 }
