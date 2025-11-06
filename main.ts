@@ -13,6 +13,7 @@ const entitiesSlider = document.getElementById(
 // Инициализация Three.js
 const scene = new THREE.Scene();
 const stats = new Stats();
+
 const camera = new THREE.OrthographicCamera(-5, 5, 5, -5, 0.1, 10); // Ортографическая камера для 2D вида
 camera.position.z = 1;
 const renderer = new THREE.WebGLRenderer({ antialias: true });
