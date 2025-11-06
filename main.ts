@@ -1,60 +1,44 @@
-import { World } from "./src/core";
 import * as THREE from "three";
+import { World } from "./src/core";
+import Stats from "three/examples/jsm/libs/stats.module.js"; // Добавлен импорт Stats
 
-const width = 800;
-const height = 600;
-const canvas = document.createElement("canvas");
-canvas.style.display = "block";
-canvas.style.border = "1px solid black";
-document.body.appendChild(canvas);
+// Получение элементов DOM
+const entitiesValue = document.getElementById(
+  "entities-value"
+) as HTMLSpanElement;
+const entitiesSlider = document.getElementById(
+  "entities-slider"
+) as HTMLInputElement;
 
-// FPS display
-const fpsDisplay = document.createElement("div");
-fpsDisplay.id = "fps-display";
-fpsDisplay.style.fontSize = "20px";
-fpsDisplay.style.marginTop = "10px";
-document.body.appendChild(fpsDisplay);
+// Инициализация Three.js
+const scene = new THREE.Scene();
+const stats = new Stats();
+const camera = new THREE.OrthographicCamera(-5, 5, 5, -5, 0.1, 10); // Ортографическая камера для 2D вида
+camera.position.z = 1;
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+document.body.appendChild(renderer.domElement);
+document.body.appendChild(stats.dom);
 
-// UI controls
-const controlsDiv = document.createElement("div");
-controlsDiv.style.marginTop = "10px";
-document.body.appendChild(controlsDiv);
+let boxSizeX = 5;
+let boxSizeY = 5;
 
-const gravitySlider = document.createElement("input");
-gravitySlider.type = "range";
-gravitySlider.min = "0";
-gravitySlider.max = "500";
-gravitySlider.value = "0"; // 0 для хаоса
-gravitySlider.style.width = "200px";
-const gravityLabel = document.createElement("span");
-gravityLabel.innerText = "Gravity: 0";
-controlsDiv.appendChild(gravityLabel);
-controlsDiv.appendChild(document.createElement("br"));
-controlsDiv.appendChild(gravitySlider);
+// Адаптация к размеру окна
+function resizeRenderer() {
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  camera.left = -window.innerWidth / 80; // Масштаб для 2D (примерно как в Canvas2D)
+  camera.right = window.innerWidth / 80;
+  camera.top = window.innerHeight / 80;
+  camera.bottom = -window.innerHeight / 80;
+  camera.updateProjectionMatrix();
 
-const dampingSlider = document.createElement("input");
-dampingSlider.type = "range";
-dampingSlider.min = "0.9";
-dampingSlider.max = "0.999";
-dampingSlider.step = "0.001";
-dampingSlider.value = "0.95";
-const dampingLabel = document.createElement("span");
-dampingLabel.innerText = "Damping: 0.95";
-controlsDiv.appendChild(dampingLabel);
-controlsDiv.appendChild(document.createElement("br"));
-controlsDiv.appendChild(dampingSlider);
+  // Обновляем границы для физики
+  boxSizeX = camera.right;
+  boxSizeY = camera.top;
+}
+window.addEventListener("resize", resizeRenderer);
+resizeRenderer();
 
-const windSlider = document.createElement("input");
-windSlider.type = "range";
-windSlider.min = "0";
-windSlider.max = "50";
-windSlider.value = "10";
-const windLabel = document.createElement("span");
-windLabel.innerText = "Wind: 10";
-controlsDiv.appendChild(windLabel);
-controlsDiv.appendChild(document.createElement("br"));
-controlsDiv.appendChild(windSlider);
-
+// Инициализация мира (ECS) — добавляем компонент color
 const world = new World({
   components: {
     position: {
@@ -65,84 +49,144 @@ const world = new World({
       dx: { type: "f32", byte: 4, default: 0 },
       dy: { type: "f32", byte: 4, default: 0 },
     },
+    color: {
+      r: { type: "f32", byte: 4, default: 1.0 },
+      g: { type: "f32", byte: 4, default: 0.0 },
+      b: { type: "f32", byte: 4, default: 0.0 },
+    },
   },
 });
 
 const Position = world.useComponent("position");
 const Velocity = world.useComponent("velocity");
+const Color = world.useComponent("color");
 
-const testEntities: number[] = [];
-const numEntities = 10000; // Стабильно 60 FPS
+// Переменные для сущностей
+let numEntities = 100;
+let testEntities: number[] = [];
+let positions: Float32Array;
+let colors: Float32Array;
+// Геометрия и материал для Points
+let pointsGeometry = new THREE.BufferGeometry();
+let pointsMaterial = new THREE.PointsMaterial({
+  size: 10, // Размер точек (можно менять)
+  vertexColors: true, // Используем цвета вершин
+});
+let points = new THREE.Points(pointsGeometry, pointsMaterial);
 
-for (let i = 0; i < numEntities; i++) {
-  const entityId = world.createEntity();
-  Position.add(entityId);
-  Velocity.add(entityId);
-
-  Position.set(entityId, "x", Math.random() * width);
-  Position.set(entityId, "y", Math.random() * height);
-
-  const angle = Math.random() * Math.PI * 2;
-  let dx = Math.cos(angle) * 100;
-  let dy = Math.sin(angle) * 100;
-  Velocity.set(entityId, "dx", dx);
-  Velocity.set(entityId, "dy", dy);
-
-  testEntities.push(entityId);
-}
-
-// Three.js setup (unchanged)
-const scene = new THREE.Scene();
-const camera = new THREE.OrthographicCamera(0, width, height, 0, 0.1, 1000);
-camera.position.z = 1;
-const renderer = new THREE.WebGLRenderer({ canvas });
-renderer.setSize(width, height);
-
-const geometry = new THREE.BufferGeometry();
-const positions = new Float32Array(numEntities * 3);
-const colors = new Float32Array(numEntities * 3);
-
-geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
-
-const material = new THREE.PointsMaterial({ size: 8, vertexColors: true });
-const points = new THREE.Points(geometry, material);
 scene.add(points);
 
-function render() {
-  let idx = 0;
-  for (let i = 0; i < testEntities.length; i++) {
-    const entityId = testEntities[i];
-    let x = Position.get(entityId, "x");
-    let y = Position.get(entityId, "y");
+function updateEntities(newNum: number) {
+  numEntities = newNum;
+  entitiesValue.textContent = numEntities.toString();
 
-    if (x < -100 || x > width + 100 || y < -100 || y > height + 100) {
-      positions[idx] = 0;
-      positions[idx + 1] = 0;
-      positions[idx + 2] = 0;
-    } else {
-      positions[idx] = x;
-      positions[idx + 1] = height - y;
-      positions[idx + 2] = 0;
-
-      const dy = Velocity.get(entityId, "dy");
-      const speed = Math.min(1, Math.abs(dy) / 200);
-      colors[idx] = dy < 0 ? speed : 0;
-      colors[idx + 1] = 0.5;
-      colors[idx + 2] = dy > 0 ? speed : 0;
-    }
-    idx += 3;
+  // Удаляем старые сущности
+  for (let id of testEntities) {
+    world.destroyEntity(id);
   }
-  geometry.attributes.position.needsUpdate = true;
-  geometry.attributes.color.needsUpdate = true;
-  renderer.render(scene, camera);
+  testEntities.length = 0;
+
+  // Создаём новые сущности (2D: x, y; z=0)
+  for (let i = 0; i < numEntities; i++) {
+    const entityId = world.createEntity();
+    Position.add(entityId);
+    Velocity.add(entityId);
+    Color.add(entityId);
+
+    Position.set(entityId, "x", (Math.random() - 0.5) * 10);
+    Position.set(entityId, "y", (Math.random() - 0.5) * 10);
+
+    const angle = Math.random() * Math.PI * 2;
+    let dx = Math.cos(angle) * 100;
+    let dy = Math.sin(angle) * 100;
+    Velocity.set(entityId, "dx", dx);
+    Velocity.set(entityId, "dy", dy);
+
+    // Цвет на основе индекса (HSL -> RGB, нормализованный 0-1)
+    const hue = (i / numEntities) * 360;
+    const saturation = 0.7;
+    const lightness = 0.5;
+    const rgb = hslToRgb(hue / 360, saturation, lightness);
+    Color.set(entityId, "r", rgb.r);
+    Color.set(entityId, "g", rgb.g);
+    Color.set(entityId, "b", rgb.b);
+
+    testEntities.push(entityId);
+  }
+
+  // Пересоздаём буферы при изменении количества сущностей
+  positions = new Float32Array(numEntities * 3); // x, y, z
+  colors = new Float32Array(numEntities * 3); // r, g, b
+  pointsGeometry.setAttribute(
+    "position",
+    new THREE.BufferAttribute(positions, 3)
+  );
+  pointsGeometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+
+  // Обновляем геометрию сразу после создания
+  updatePointsGeometry();
 }
 
+// Функция HSL to RGB (возвращает 0-1)
+function hslToRgb(
+  h: number,
+  s: number,
+  l: number
+): { r: number; g: number; b: number } {
+  let r, g, b;
+  if (s === 0) {
+    r = g = b = l;
+  } else {
+    const hue2rgb = (p: number, q: number, t: number) => {
+      if (t < 0) t += 1;
+      if (t > 1) t -= 1;
+      if (t < 1 / 6) return p + (q - p) * 6 * t;
+      if (t < 1 / 2) return q;
+      if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+      return p;
+    };
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    const p = 2 * l - q;
+    r = hue2rgb(p, q, h + 1 / 3);
+    g = hue2rgb(p, q, h);
+    b = hue2rgb(p, q, h - 1 / 3);
+  }
+  return { r, g, b };
+}
+
+function updatePointsGeometry() {
+  const posArray = pointsGeometry.attributes.position.array as Float32Array;
+  const colorArray = pointsGeometry.attributes.color.array as Float32Array;
+
+  for (let i = 0; i < testEntities.length; i++) {
+    const entityId = testEntities[i];
+    const x = Position.get(entityId, "x");
+    const y = Position.get(entityId, "y");
+    const r = Color.get(entityId, "r");
+    const g = Color.get(entityId, "g");
+    const b = Color.get(entityId, "b");
+
+    posArray[i * 3] = x;
+    posArray[i * 3 + 1] = y;
+    posArray[i * 3 + 2] = 0; // z = 0 для 2D
+
+    colorArray[i * 3] = r;
+    colorArray[i * 3 + 1] = g;
+    colorArray[i * 3 + 2] = b;
+  }
+
+  pointsGeometry.attributes.position.needsUpdate = true;
+  pointsGeometry.attributes.color.needsUpdate = true;
+}
+
+// Фиксированные значения физики
+const gravity = 9.8;
+const damping = 0.9;
+const wind = 0;
+
+// Функция обновления физики (только x, y)
 function update(delta: number) {
   const dt = delta / 1000;
-  const gravity = parseFloat(gravitySlider.value);
-  const damping = parseFloat(dampingSlider.value);
-  const wind = parseFloat(windSlider.value);
 
   for (let i = 0; i < testEntities.length; i++) {
     const entityId = testEntities[i];
@@ -151,25 +195,23 @@ function update(delta: number) {
     let dx = Velocity.get(entityId, "dx");
     let dy = Velocity.get(entityId, "dy");
 
-    if (x < -200 || x > width + 200 || y < -200 || y > height + 200) {
-      continue;
-    }
-
-    dy -= gravity * dt; // Гравитация вниз
+    dy -= gravity * dt;
     dx += wind * dt;
 
     x += dx * dt;
     y += dy * dt;
 
-    if (x <= 0 || x >= width) {
+    // Отражения от стен (-5 до 5)
+    if (x <= -boxSizeX || x >= boxSizeX) {
       dx = -dx * damping;
-      x = Math.max(0.1, Math.min(width - 0.1, x));
+      x = Math.max(-boxSizeX + 0.1, Math.min(boxSizeX - 0.1, x));
     }
-    if (y <= 0 || y >= height) {
+    if (y <= -boxSizeY || y >= boxSizeY) {
       dy = -dy * damping;
-      y = Math.max(0.1, Math.min(height - 0.1, y));
+      y = Math.max(-boxSizeY + 0.1, Math.min(boxSizeY - 0.1, y));
     }
 
+    // Маленькие толчки
     if (Math.abs(dx) < 0.5) dx += (Math.random() - 0.5) * 1;
     if (Math.abs(dy) < 0.5) dy += (Math.random() - 0.5) * 1;
 
@@ -180,31 +222,33 @@ function update(delta: number) {
   }
 }
 
-let frameCount = 0;
-let lastLogTime = 0;
-let lastTime = 0;
-
-function loop(timestamp: number) {
-  const delta = timestamp - lastTime;
-  lastTime = timestamp;
-  frameCount++;
-
-  update(delta);
-  render();
-
-  // Update UI labels
-  gravityLabel.innerText = `Gravity: ${gravitySlider.value}`;
-  dampingLabel.innerText = `Damping: ${dampingSlider.value}`;
-  windLabel.innerText = `Wind: ${windSlider.value}`;
-
-  if (timestamp - lastLogTime >= 1000) {
-    const fps = frameCount / ((timestamp - lastLogTime) / 1000);
-    fpsDisplay.innerText = `FPS: ${fps.toFixed(1)} (entities: ${numEntities})`;
-    frameCount = 0;
-    lastLogTime = timestamp;
-  }
-
-  requestAnimationFrame(loop);
+// Функция рендеринга
+function render() {
+  updatePointsGeometry(); // Обновляем геометрию каждый кадр
+  renderer.render(scene, camera);
 }
 
-loop(0);
+// Обработчик слайдера
+entitiesSlider.addEventListener("input", () => {
+  const newNum = parseInt(entitiesSlider.value);
+  updateEntities(newNum);
+});
+
+// Основной цикл анимации с ручным FPS (как в Canvas2D версии)
+let lastTime = 0;
+
+function animate(time: number) {
+  const delta = time - lastTime;
+  lastTime = time;
+
+  stats.begin();
+  update(delta);
+  render();
+  stats.end();
+
+  requestAnimationFrame(animate);
+}
+
+// Запуск
+updateEntities(numEntities);
+animate(0);

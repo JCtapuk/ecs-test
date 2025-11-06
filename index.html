@@ -3,10 +3,58 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
+    <title>Physics Simulation</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        font-family: Arial, sans-serif;
+        background: #111;
+        color: white;
+      }
+
+      .overlay {
+        position: absolute;
+        top: 10px;
+        left: 0;
+        right: 0;
+        padding: 10px;
+        border-radius: 5px;
+        z-index: 1000;
+        display: flex;
+        justify-content: center;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .overlay button.active {
+        background: #555;
+      }
+      .overlay input {
+        margin: 5px;
+        width: 200px;
+      }
+      .overlay label {
+        display: block;
+        margin-top: 10px;
+      }
+    </style>
   </head>
   <body>
-    <script type="module" src="./main.ts"></script>
-    <script type="module" src="./main-3d.ts"></script>
+    <div class="overlay">
+      <label for="entities-slider"
+        >Entities: <span id="entities-value">100</span></label
+      >
+      <input
+        id="entities-slider"
+        type="range"
+        min="100"
+        max="100000"
+        value="100"
+        step="1"
+      />
+    </div>
+    <script type="module" src="main.ts"></script>
   </body>
 </html>
