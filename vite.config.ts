@@ -8,11 +8,7 @@ export default defineConfig({
       input: {
         index: resolve(process.cwd(), "index.html"),
         game: resolve(process.cwd(), "game.html"),
-      },
-      output: {
-        entryFileNames: "[name].js",
-        chunkFileNames: "assets/[name]-[hash].js",
-        assetFileNames: "assets/[name]-[hash].[ext]",
+        "game-platform": resolve(process.cwd(), "game-platform.html"),
       },
     },
   },

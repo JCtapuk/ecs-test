@@ -56,12 +56,6 @@ if (rightBtn) {
 }
 
 // Получение элементов DOM
-const entitiesValue = document.getElementById(
-  "entities-value"
-) as HTMLSpanElement;
-const entitiesSlider = document.getElementById(
-  "entities-slider"
-) as HTMLInputElement;
 const gameOverMessage = document.createElement("div"); // Новое: сообщение о конце игры
 gameOverMessage.style.position = "absolute";
 gameOverMessage.style.top = "50%";
@@ -182,7 +176,6 @@ window.addEventListener("keyup", (e) => {
 // Функция обновления астероидов
 function updateEntities(newNum: number) {
   numEntities = newNum;
-  entitiesValue.textContent = numEntities.toString();
 
   // Удаляем старые
   for (let id of asteroidEntities) {
@@ -392,12 +385,6 @@ function render() {
   renderer.render(scene, camera);
   stats.end();
 }
-
-// Обработчик слайдера
-entitiesSlider.addEventListener("input", () => {
-  const newNum = parseInt(entitiesSlider.value);
-  updateEntities(newNum);
-});
 
 // Основной цикл
 let lastTime = 0;

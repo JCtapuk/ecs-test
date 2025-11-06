@@ -57,6 +57,9 @@ class ComponentChunk {
 
   get(offset: number, field: ComponentField) {
     switch (field.type) {
+      case "u8": {
+        return this.#view.getUint8(offset);
+      }
       case "f32": {
         return this.#view.getFloat32(offset, true);
       }
@@ -72,6 +75,10 @@ class ComponentChunk {
 
   set(offset: number, field: ComponentField, value: number | string) {
     switch (field.type) {
+      case "u8": {
+        this.#view.setUint8(offset, value as number);
+        break;
+      }
       case "f32": {
         this.#view.setFloat32(offset, value as number, true);
         break;
@@ -202,6 +209,11 @@ class Component<T extends ComponentSchema> {
 }
 
 type ComponentField =
+  | {
+      type: "u8";
+      byte: 1;
+      default: number;
+    }
   | {
       type: "f32";
       byte: 4;
