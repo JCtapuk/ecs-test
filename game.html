@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Game</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        font-family: Arial, sans-serif;
+        background: #111;
+        color: white;
+      }
+
+      .overlay {
+        position: absolute;
+        top: 10px;
+        left: 0;
+        right: 0;
+        padding: 10px;
+        border-radius: 5px;
+        z-index: 1000;
+        display: flex;
+        justify-content: center;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .overlay button.active {
+        background: #555;
+      }
+      .overlay input {
+        margin: 5px;
+        width: 200px;
+      }
+      .overlay label {
+        display: block;
+        margin-top: 10px;
+      }
+    </style>
+    <script type="module" crossorigin src="/ecs-test/game.js"></script>
+    <link rel="modulepreload" crossorigin href="/ecs-test/assets/stats.module-CpMspLJH.js">
+  </head>
+  <body>
+    <!-- Виртуальные кнопки для мобильных -->
+    <div
+      id="mobileControls"
+      style="
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: none;
+      "
+    >
+      <button
+        id="leftBtn"
+        style="
+          width: 60px;
+          height: 60px;
+          margin: 0 10px;
+          background: #333;
+          color: white;
+          border: none;
+          border-radius: 50%;
+          font-size: 24px;
+        "
+      >
+        ←
+      </button>
+      <button
+        id="upBtn"
+        style="
+          width: 60px;
+          height: 60px;
+          margin: 0 10px;
+          background: #333;
+          color: white;
+          border: none;
+          border-radius: 50%;
+          font-size: 24px;
+        "
+      >
+        ↑
+      </button>
+      <button
+        id="rightBtn"
+        style="
+          width: 60px;
+          height: 60px;
+          margin: 0 10px;
+          background: #333;
+          color: white;
+          border: none;
+          border-radius: 50%;
+          font-size: 24px;
+        "
+      >
+        →
+      </button>
+    </div>
+
+    <script>
+      // Определение мобильного устройства (простая проверка)
+      const isMobile =
+        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+          navigator.userAgent
+        );
+      if (isMobile) {
+        document.getElementById("mobileControls").style.display = "block";
+      }
+    </script>
+
+    <div class="overlay">
+      <a href="./" style="color: white">Basic Example</a>
+      <label for="entities-slider"
+        >Entities: <span id="entities-value">100</span></label
+      >
+      <input
+        id="entities-slider"
+        type="range"
+        min="100"
+        max="100000"
+        value="100"
+        step="1"
+      />
+    </div>
+  </body>
+</html>
